@@ -1,0 +1,89 @@
+---
+title: "Practical Machine Learning Project: Human Activity Recognition"
+author: "Bahareh Eghtesadi"
+date: "January 28, 2016"
+output: html_document
+---
+
+#Summary
+In this project we use the data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. The participants have done the lifting in five different ways. The goal is to determine the quality of the lifting for twenty movements given in the test data set. In this report, we present how the data is obtained, and processed. The original training data set contains 19622 observations with 160 variables. After processing data, we fit the Random Forest method to the training data set using cross validation. 
+
+# Obtaining data and cleaning
+We first load the caret library. Then, we download the data and read the files as follows:
+```{r}
+library(caret)
+
+setwd('/home/bahar/COURSERA/MachineLearning')
+
+# getting the training and testing data
+if (!file.exists("/home/bahar/COURSERA/Data/pml-training.csv"))
+{
+  DataFile <- download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", 
+                           destfile = "/home/bahar/COURSERA/Data/pml-training.csv" , method = "curl")
+}
+
+if (!file.exists("/home/bahar/COURSERA/Data/pml-testing.csv"))
+{
+  DataFile <- download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", 
+                            destfile = "/home/bahar/COURSERA/Data/pml-testing.csv" , method = "curl")
+}
+
+TrainData <- read.csv("/home/bahar/COURSERA/Data/pml-training.csv" , sep="," , header = TRUE)
+TestData <- read.csv("/home/bahar/COURSERA/Data/pml-testing.csv" , sep="," , header = TRUE)
+```
+
+First we let's see the columns of the training data set:
+```{r}
+dim(TrainData)
+head(names(TrainData), 40)
+```
+
+As can be seen, the first columns with the id, names, and timestamp windows are not useful in the prediction. Therefore, they need to be removed from the data set. Also, all the columns that contain NA values in more than 60% percent of the rows are removed as well.
+```{r}
+Nuseful <- 1:7
+TrainData <- TrainData[ , -Nuseful]
+TestData <- TestData[, -Nuseful]
+
+# Write a function to determin how many of the columns are na
+NAColumns <- function (column)
+{
+  if  ( sum(is.na(TrainData[, column])) > 0.6 * nrow(TrainData) )
+  {
+    return(TRUE)
+  }
+  else
+  {
+    return(FALSE)
+  }
+}
+
+RemoveCol <- sapply(colnames(TrainData), NAColumns)
+TrainData <- TrainData[, !RemoveCol]
+TestData <- TestData[, !RemoveCol]
+TestData <- TestData[, -length(TestData)]
+```
+
+In the next step, we remove those columns that have low variance. This helps to reduce the dimension of the data set.
+```{r}
+lowvar <- nearZeroVar(TrainData , saveMetrics = TRUE)
+TrainData <- TrainData[,!lowvar$nzv]
+
+```
+
+# Fitting the model
+We apply Random Forest method to the training set as it is a robust method with generaly high accuracy in the predictions. We use the trainig data set to fit the model. Also, in order to obtain a better estimate of the errors, we use cross validation. We apply the trainControl function to generate 5 folds in the training data.
+```{r }
+set.seed(123)
+rf_fit <- train(TrainData$classe ~. , data = TrainData , method = 'rf' , trControl = trainControl(method = 'cv' , 5) , 
+                ntree = 200)
+rf_fit
+```
+
+# Results and Conclusion
+The accuray is 99% and the in-sample error produced by the cross validation is good enough to use this method to predict the test sample. As can be seen, the predictions for the test sample are 100% correct.
+```{r}
+pred_test <- predict(rf_fit , TestData)
+pred_test
+```
+
+
