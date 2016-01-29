@@ -2,8 +2,9 @@
 title: "Practical Machine Learning Project: Human Activity Recognition"
 author: "Bahareh Eghtesadi"
 date: "January 28, 2016"
-output: html_document
+output: md_document
 ---
+
 
 #Summary
 In this project we use the data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. The participants have done the lifting in five different ways. The goal is to determine the quality of the lifting for twenty movements given in the test data set. In this report, we present how the data is obtained, and processed. The original training data set contains 19622 observations with 160 variables. After processing data, we fit the Random Forest method to the training data set using cross validation. 
